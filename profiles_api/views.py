@@ -1,9 +1,13 @@
 from django.shortcuts import render
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.authentication import TokenAuthentication
 
 from profiles_api import serializers
+from profiles_api.models import UserProfile
+from profiles_api import permissions
+
 
 # Create your views here.
 
@@ -69,3 +73,58 @@ class HelloAPIView(APIView):
         }
         
         return Response(response)
+    
+
+class HelloViewSet(viewsets.ModelViewSet):
+    
+    serializer_class = serializers.HelloSerializer
+    
+    def list(self, request):
+        a_viewset = [
+            "This is a vieset",
+            "Provides more functionality with less code"
+        ]
+        
+        response = {
+            "status":status.HTTP_200_OK,
+            "mesage": "A list of all viewset",
+            "data": a_viewset
+        }
+        return Response(response)
+    
+    def create(self, request, format=None):
+        serializer = self.serializer_class(data=request.data)
+        
+        if serializer.is_valid():
+            name = serializer.validated_data.get('name')
+            message = f"hello {name}"
+            
+            response = {
+                "status": status.HTTP_200_OK,
+                "message": message
+            }
+            
+            return Response(response)
+        
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,  
+        )
+        
+    def retrieve(self, request, pk=None):
+        return Response({"Method": "RETRIEVE"})
+    
+    def update(self, request, pk=None):
+        return Response({"Method": "PUT"})
+    
+    def partial_updates(self, request, pk=None):
+        return Response({"Method": "PATCH"})
+    
+    def destroy(self, request, pk=None):
+        return Response({"Method": "delete"})
+    
+class UserProfileViewSet(viewsets.ModelViewSet):
+    queryset = UserProfile.objects.all()
+    serializer_class = serializers.UserProfileSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.UpdateOwnPermission)
