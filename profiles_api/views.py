@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from rest_framework import status, viewsets, filters
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
@@ -7,7 +8,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
 
 from profiles_api import serializers
-from profiles_api.models import UserProfile
+from profiles_api.models import UserProfile, ProfileFeedItem
 from profiles_api import permissions
 
 
@@ -134,3 +135,15 @@ class UserProfileViewSet(viewsets.ModelViewSet):
       
 class UserLoginViewSet(ObtainAuthToken):
         renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+        
+class ProfileFeedItemViewSet(viewsets.ModelViewSet):
+    queryset = ProfileFeedItem.objects.all()
+    serializer_class = serializers.ProfileFeedItemSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.UpdateOwnPermission, IsAuthenticated)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('user_profile', 'status_text',)
+    
+    def perform_create(self, serializer):
+        serializer.save(user_profile=self.request.user)
+        
